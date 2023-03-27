@@ -11,7 +11,12 @@
 rm(list = ls())
 
 # Configurar el directorio de trabajo 
-setwd("D:/Cursos22/Analitica2023/TFinalEP")
+setwd("D:/Cursos22/Analitica2023/TFinalEP/Analisis_Artesanos")
+
+#### MOdulos y datos ####
+library(tidyverse)
+library(readxl)
+
 
 ## Datos disponibles en:
 # https://www.datosabiertos.gob.pe/dataset/informaci%C3%B3n-de-fallecidos-del-sistema-inform%C3%A1tico-nacional-de-defunciones-sinadef-ministerio
@@ -123,6 +128,60 @@ unique(df$LINEA_ARTESANAL)
 
 ## Analicemos el numero de artesanos segun sub lineaartesanal 
 unique(df$SUBLINEA_ARTESANAL)
+
+
+
+
+#########################################################################
+
+
+### Paquetes necesarios
+#Los paquetes requeridos para poder hacer mapas en R son, básicamente, los que se presentan a continuación.
+
+library(sf)
+library(purrr)
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
+
+# Carguemos el mapa 
+m_provincias <- read_sf("MProv/PROVINCIAS_inei_geogpsperu_suyopomalia.shp")
+m_provincias
+
+
+
+# Actualicemos df considerando solo los dptos del peru 
+unique(df$PROVINCIA)
+unique(m_provincias$NOMBPROV)
+#df  <- df %>% filter(PROVINCIA %in% m_provincias$NOMBPROV)
+
+df$PROVINCIA <- toupper(df$PROVINCIA)
+unique(df$PROVINCIA)
+
+# datos unidos
+
+datos <- m_provincias %>% 
+  left_join(df %>% count(PROVINCIA, name = "N_artes"),
+            by =c("NOMBPROV"= "PROVINCIA")) %>% 
+  mutate(N_artes = as.numeric(N_artes))
+
+
+grafico1 <- ggplot(data = datos %>%
+                  filter(NOMBDEP=="PIURA")) +
+  geom_sf(aes(fill = N_artes), show.legend = T, colour = "white")+
+  geom_label_repel(aes(label = NOMBPROV,
+                       geometry = geometry), 
+                   size = 2,
+                   stat = "sf_coordinates",
+                   min.segment.length = 0,
+                   label.size = 1,
+                   max.overlaps = Inf) +
+  scale_fill_viridis_c(trans = "sqrt" ,  alpha = 0.8)+
+  theme_void()
+
+grafico1
+
+
 
 
 

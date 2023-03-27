@@ -1,0 +1,106 @@
+---
+title: "Mapa del Mercado Central"
+author: "Clase 5"
+date: "2023-02-26"
+subtitle: "Gran Ramon Castilla"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    theme: simplex
+---
+
+```{r Configuracion}
+# Paquetes 
+library(tidyverse)
+library(leaflet)
+library(leaflet.extras)
+library(leafem)
+library(fontawesome)
+
+```
+
+
+## Definicion de un contenedor 
+
+```{r}
+# Definamos una capa base para mapas 
+contenedor <- leaflet()
+# 
+class(contenedor)
+# 
+contenedor
+```
+
+## Definicion del mapa base usando Open Street Map 
+```{r}
+mapa_base <- leaflet() %>% 
+  addTiles()
+mapa_base
+
+```
+
+
+## Mostremos el mapa con un marcador 
+
+```{r}
+# Mercado Municipal gran Ramon Castilla : 
+McdoRamonCastilla <- leaflet() %>% 
+  addTiles() %>% 
+  addMarkers(lng = -77.02382850863249,lat = -12.04977144047476) %>% 
+  addCircleMarkers(lng = -77.02382850863249,lat = -12.04977144047476, color = "green",
+                   radius = 50)
+McdoRamonCastilla
+```
+
+## Agreguemos un logo y un minimapa
+
+```{r}
+# Almacenemos el logo en una imagen
+LogoEPC <- "https://raw.githubusercontent.com/robintux/Images4Colabs/master/EPC_Transparente.png"
+# 
+RC_Logo <- McdoRamonCastilla %>% 
+  leafem::addLogo(LogoEPC, url = "https://educateperuconsultores.com/", position = "topright",
+                  width = 160, height = 60) %>% 
+  # Agreguemos un minimapa
+  addMiniMap(position = "bottomleft", toggleDisplay = TRUE)
+```
+
+## Agregamos un popup al marcador 
+```{r}
+# Definamos una cadena caracteres para definir el lugar 
+LugarMap1 <- "Mcdo. Municipal Gran Ramon Castilla"
+LatMap1 <- c(-12.04977144047476)
+LonMap1 <- c(-77.02382850863249)
+ImgMap1 <- paste0("<center>
+                  <img src = 'https://visitalima.pe/wp-content/uploads/2020/09/130521-RECORRIDO-PUNTOS-TUR%C3%8DSTICOS-BARRIOS-ALTOS-269.jpg'
+                  width = 200 height = 100>
+                  </center>")
+UrlMap1 <- paste0("<a
+                  href = 'https://es.wikipedia.org/wiki/Mercado_Central_de_Lima'
+                  target='_blank'>Mercado Central
+                  </a>")
+RC_Logo %>% 
+  addMarkers(lat = -12.04977144047476,
+             lng = -77.02382850863249,
+             popup = paste(sep = "<br>",
+               "<b> Lugar :    </b>" ,LugarMap1,
+               "<b> Latitud :  </b>" , LatMap1,
+               "<b> Longitud : </b>", LonMap1,
+               ImgMap1,
+               "<b> web : </b>",  UrlMap1)
+             )
+
+
+```
+
+
+
+
+
+
+
+
+
+
+

@@ -6,3 +6,4 @@ Disponible en: [Datos Registro de Artesanos](https://www.datosabiertos.gob.pe/da
 
 Examen final del curso de Analitica y Visualizacion de datos EPC
 
+Reporte disponible en: [Reporte](https://juancamilo18.github.io/Analisis_Artesanos/)

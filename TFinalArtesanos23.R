@@ -39,6 +39,10 @@ colSums(is.na(df))
 summary(df$UBIGEO)
 table(df$UBIGEO)
 
+## Eliminamos los ultimos 119 valores
+# decidimos eliminar esas observacion NA
+df <-  df %>% 
+  drop_na()
 
 
 #### Analisis descriptivo ####
@@ -59,7 +63,7 @@ Num_Artesanos %>%
   ggplot(mapping = aes(x = reorder(PROVINCIA, desc(N_Artesanos)), y = N_Artesanos)) +
   #geom_col() +
   geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
-  theme(axis.text.x = element_text(angle = 45, face = "italic", colour = "blue"))+
+  theme(axis.text.x = element_text(angle = 90, face = "italic", colour = "blue"))+
   #coord_flip()+
   geom_text(aes(label = N_Artesanos), vjust = -0.3) +
   labs(x="Provincias",y= "Numero de artesanos")  +              
@@ -127,8 +131,8 @@ Art_estado <- df %>%
 Art_estado %>% 
   ggplot(mapping = aes(x = reorder(ESTADO, desc(N_Artesanos)), y = N_Artesanos)) +
   #geom_col() +
-  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
-  theme(axis.text.x = element_text(angle = 15, face = "italic", colour = "blue"))+
+  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.4)+
+  theme(axis.text.x = element_text(angle = 0, face = "italic", colour = "blue"))+
   #coord_flip()+
   geom_text(aes(label = N_Artesanos), vjust = -0.3) +
   labs(x="Numero de artesanos",y= "Estado")  +              
@@ -150,7 +154,7 @@ Art_const %>%
   ggplot(mapping = aes(x = reorder(TIPO_CONSTANCIA, desc(N_Artesanos)), y = N_Artesanos)) +
   #geom_col() +
   geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
-  theme(axis.text.x = element_text(angle = 15, face = "italic", colour = "blue"))+
+  theme(axis.text.x = element_text(angle = 0, face = "italic", colour = "blue"))+
   #coord_flip()+
   geom_text(aes(label = N_Artesanos), vjust = -0.3) +
   labs(x="Numero de artesanos",y= "Tipo de constancia")  +              
@@ -172,7 +176,7 @@ Art_linart %>%
   ggplot(mapping = aes(x = reorder(LINEA_ARTESANAL, desc(N_Artesanos)), y = N_Artesanos)) +
   #geom_col() +
   geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
-  theme(axis.text.x = element_text(angle = 15, face = "italic", colour = "blue"))+
+  theme(axis.text.x = element_text(angle = 90, face = "italic", colour = "blue"))+
   #coord_flip()+
   geom_text(aes(label = N_Artesanos), vjust = -0.3) +
   labs(x="Numero de artesanos",y= "Línea artesanal")  +              
@@ -194,7 +198,7 @@ Art_sblinart %>%
   ggplot(mapping = aes(x = reorder(SUBLINEA_ARTESANAL, desc(N_Artesanos)), y = N_Artesanos)) +
   #geom_col() +
   geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
-  theme(axis.text.x = element_text(angle = 15, face = "italic", colour = "blue"))+
+  theme(axis.text.x = element_text(angle = 90, face = "italic", colour = "blue"))+
   #coord_flip()+
   geom_text(aes(label = N_Artesanos), vjust = -0.3) +
   labs(x="Numero de artesanos",y= "Sublínea artesanal")  +              
@@ -224,10 +228,10 @@ m_distritos<- read_sf("MDist/DISTRITOS_inei_geogpsperu_suyopomalia.shp")
 m_distritos
 
 
-## Actualicemos el df considerando solo los dptos del peru 
+## Actualicemos el df considerando solo las provincias del peru 
 unique(df$PROVINCIA)
 unique(m_provincias$NOMBPROV)
-#df  <- df %>% filter(PROVINCIA %in% m_provincias$NOMBPROV)
+
 # ponemos en mayusculas df$PROVINCIA para luego unir con m_provincias$NOMBPROV
 df$PROVINCIA <- toupper(df$PROVINCIA)
 unique(df$PROVINCIA)
@@ -248,7 +252,7 @@ grafico1 <- ggplot(data = datos %>%
                    min.segment.length = 0,
                    label.size = 1,
                    max.overlaps = Inf) +
-  scale_fill_viridis_c(trans = "sqrt" ,  alpha = 0.8)+
+  scale_fill_viridis_c(trans = "sqrt" ,  alpha = 0.9)+
   theme_void()
 
 grafico1
@@ -256,10 +260,11 @@ grafico1
 
 ### Datos por distrito
 unique(df$DISTRITO)
-unique(m_distritos$NOMDIST)
+unique(m_distritos$NOMBDIST)
+
 # # ponemos en mayusculas df$DISTRITO para luego unir con m_distritos$NOMDIST
-df$PROVINCIA <- toupper(df$PROVINCIA)
-unique(df$PROVINCIA)
+df$DISTRITO <- toupper(df$DISTRITO)
+unique(df$DISTRITO)
 
 ## datos unidos por DISTRITO
 datos_dist <- m_distritos %>% 
@@ -270,14 +275,14 @@ datos_dist <- m_distritos %>%
 
 grafico2 <- ggplot(data = datos_dist)  +
   geom_sf(aes(fill = N_artes), show.legend = T, colour = "white")+
-  geom_label_repel(aes(label = NOMDIST,
+  geom_label_repel(aes(label = NOMBDIST,
                        geometry = geometry), 
                    size = 2,
                    stat = "sf_coordinates",
                    min.segment.length = 0,
                    label.size = 1,
                    max.overlaps = Inf) +
-  scale_fill_viridis_c(trans = "sqrt" ,  alpha = 0.8)+
+  scale_fill_viridis_c(trans = "sqrt" ,  alpha = 0.9)+
   theme_void()
 
 grafico2
@@ -285,22 +290,5 @@ grafico2
 
 
 ################################################################################33
-
-# Paquetes 
-library(tidyverse)
-library(leaflet)
-library(leaflet.extras)
-library(leafem)
-library(fontawesome)
-
-
-
-
-
-
-
-
-
-
 
 

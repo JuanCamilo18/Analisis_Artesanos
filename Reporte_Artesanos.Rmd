@@ -1,106 +1,375 @@
 ---
-title: "Mapa del Mercado Central"
-author: "Clase 5"
-date: "2023-02-26"
-subtitle: "Gran Ramon Castilla"
+title: "<div align ='center'> <span style= 'color:#88398A'> <b> Reporte de Artesanos </b> </span> </div>"
+author: "<div align='center'> <span style='color:#88398A'><b> Juan Camilo </b> </span> </div>"
+date: "2023-03-26"
 output: 
   html_document:
+    #df_print: kable
     toc: TRUE
     toc_float: TRUE
-    theme: simplex
+    theme: cerulean
+    highlight: pygments
 ---
 
-```{r Configuracion}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#[color](https://htmlcolorcodes.com/) pagina colores
+```
+
+## <span style = "color : #88398A"> **Análisis Registro Nacional De Artesano - RNA ** </span> 
+
+Este es un breve reporte del análisis exploratorio de los Artesanos 
+Inscritos en el Registro Nacional De Artesano - RNA por línea Artesanal y por
+Provincia [Gobierno Regional Piura]
+
+**Datos disponibles en:** [Datos Registro de Artesanos](https://www.datosabiertos.gob.pe/dataset/artesanos-inscritos-en-el-registro-nacional-de-artesano-rna-por-l%C3%ADnea-artesanal-y-por)
+
+### <span style = "color : #409421"> **Cargamos los paquetes** </span> 
+
+```{r Configuracion, warning=FALSE, message=F}
 # Paquetes 
+
+library(readxl)
 library(tidyverse)
-library(leaflet)
-library(leaflet.extras)
-library(leafem)
-library(fontawesome)
 
+library(sf)
+library(purrr)
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
 ```
 
 
-## Definicion de un contenedor 
+### <span style = "color : #409421"> **Cargamos los datos** </span> 
 
 ```{r}
-# Definamos una capa base para mapas 
-contenedor <- leaflet()
-# 
-class(contenedor)
-# 
-contenedor
-```
+# Configurar el directorio de trabajo 
+setwd("D:/Cursos22/Analitica2023/TFinalEP/Analisis_Artesanos")
 
-## Definicion del mapa base usando Open Street Map 
-```{r}
-mapa_base <- leaflet() %>% 
-  addTiles()
-mapa_base
-
+df <- read.csv("artesanosrnagrp_0.csv", sep = ",")
+head(df)
 ```
 
 
-## Mostremos el mapa con un marcador 
+### <span style = "color : #409421"> **Primeros pasos con los datos** </span>
 
 ```{r}
-# Mercado Municipal gran Ramon Castilla : 
-McdoRamonCastilla <- leaflet() %>% 
-  addTiles() %>% 
-  addMarkers(lng = -77.02382850863249,lat = -12.04977144047476) %>% 
-  addCircleMarkers(lng = -77.02382850863249,lat = -12.04977144047476, color = "green",
-                   radius = 50)
-McdoRamonCastilla
+summary(df$UBIGEO)
+
+colSums(is.na(df))
 ```
 
-## Agreguemos un logo y un minimapa
+Eliminamos los ultimos 119 valores, son celdas vacias
 
 ```{r}
-# Almacenemos el logo en una imagen
-LogoEPC <- "https://raw.githubusercontent.com/robintux/Images4Colabs/master/EPC_Transparente.png"
-# 
-RC_Logo <- McdoRamonCastilla %>% 
-  leafem::addLogo(LogoEPC, url = "https://educateperuconsultores.com/", position = "topright",
-                  width = 160, height = 60) %>% 
-  # Agreguemos un minimapa
-  addMiniMap(position = "bottomleft", toggleDisplay = TRUE)
+df <-  df %>% 
+  drop_na()
+
+colSums(is.na(df))
 ```
 
-## Agregamos un popup al marcador 
+
+### <span style = "color : #409421"> **Analisis descriptivo univariado** </span> 
+
+**Analicemos el numero de artesanos por provincia**
+
+```{r, render=pander::pander}
+Num_Artesanos <- df %>% 
+  group_by(PROVINCIA) %>% 
+  summarize(N_Artesanos = n()) %>% 
+  # ordenar el dataframe por la columna PRomedioMOnto
+  arrange(desc(N_Artesanos))
+Num_Artesanos
+```
+
+Visualicemos mediante un grafico
+
 ```{r}
-# Definamos una cadena caracteres para definir el lugar 
-LugarMap1 <- "Mcdo. Municipal Gran Ramon Castilla"
-LatMap1 <- c(-12.04977144047476)
-LonMap1 <- c(-77.02382850863249)
-ImgMap1 <- paste0("<center>
-                  <img src = 'https://visitalima.pe/wp-content/uploads/2020/09/130521-RECORRIDO-PUNTOS-TUR%C3%8DSTICOS-BARRIOS-ALTOS-269.jpg'
-                  width = 200 height = 100>
-                  </center>")
-UrlMap1 <- paste0("<a
-                  href = 'https://es.wikipedia.org/wiki/Mercado_Central_de_Lima'
-                  target='_blank'>Mercado Central
-                  </a>")
-RC_Logo %>% 
-  addMarkers(lat = -12.04977144047476,
-             lng = -77.02382850863249,
-             popup = paste(sep = "<br>",
-               "<b> Lugar :    </b>" ,LugarMap1,
-               "<b> Latitud :  </b>" , LatMap1,
-               "<b> Longitud : </b>", LonMap1,
-               ImgMap1,
-               "<b> web : </b>",  UrlMap1)
-             )
-
-
+Num_Artesanos %>% 
+  ggplot(mapping = aes(x = reorder(PROVINCIA, desc(N_Artesanos)), y = N_Artesanos)) +
+  #geom_col() +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
+  theme(axis.text.x = element_text(angle = 90, face = "italic", colour = "blue"))+
+  #coord_flip()+
+  geom_text(aes(label = N_Artesanos), vjust = -0.3) +
+  labs(x="Provincias",y= "Numero de artesanos")  +              
+  #ylim(c(0,300)) +
+  ggtitle("Diagrama de barras: Numero de artesanos por provincia") 
 ```
 
 
 
+**Analicemos el numero de artesanos por distrito**
+
+```{r, render=pander::pander}
+Num_Art2 <- df %>% 
+  group_by(DISTRITO) %>% 
+  summarize(N_Artesanos = n()) %>% 
+  # ordenar el dataframe por la columna PRomedioMOnto
+  arrange(desc(N_Artesanos))
+Num_Art2 
+```
+
+Visualicemos mediante un grafico
+
+```{r}
+Num_Art2 %>% 
+  ggplot(mapping = aes(x = reorder(DISTRITO, desc(N_Artesanos)), y = N_Artesanos)) +
+  #geom_col() +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
+  theme(axis.text.x = element_text(angle = 90, face = "italic", colour = "blue"))+
+  #coord_flip()+
+  geom_text(aes(label = N_Artesanos), vjust = -0.3) +
+  labs(x="Distrito",y= "Numero de artesanos")  +              
+  #ylim(c(0,300)) +
+  ggtitle("Diagrama de barras: Numero de artesanos por distrito") 
+```
+
+
+**Analicemos la inscripcion de artesanos por clase solicitante**
+
+```{r, render=pander::pander}
+Art_sol <- df %>% 
+  group_by(SOLICITANTE) %>% 
+  summarize(N_Artesanos = n()) %>% 
+  # ordenar el dataframe por la columna PRomedioMOnto
+  arrange(desc(N_Artesanos))
+Art_sol
+```
+
+Visualicemos mediante un grafico
+
+```{r}
+Art_sol %>% 
+  ggplot(mapping = aes(x = reorder(SOLICITANTE, desc(N_Artesanos)), y = N_Artesanos)) +
+  #geom_col() +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
+  theme(axis.text.x = element_text(angle = 15, face = "italic", colour = "blue"))+
+  #coord_flip()+
+  geom_text(aes(label = N_Artesanos), vjust = -0.3) +
+  labs(x="Numero de artesanos",y= "Solicitante")  +              
+  #ylim(c(0,300)) +
+  ggtitle("Numero de artesanos segun tipo solicitante")
+```
+
+
+**Analicemos el numero de artesanos segun su estado**
+
+```{r, render=pander::pander}
+Art_estado <- df %>% 
+  group_by(ESTADO) %>% 
+  summarize(N_Artesanos = n()) %>% 
+  # ordenar el dataframe por la columna PRomedioMOnto
+  arrange(desc(N_Artesanos))
+Art_estado
+```
+
+
+Visualicemos mediante un grafico
+
+```{r}
+Art_estado %>% 
+  ggplot(mapping = aes(x = reorder(ESTADO, desc(N_Artesanos)), y = N_Artesanos)) +
+  #geom_col() +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.4)+
+  theme(axis.text.x = element_text(angle = 0, face = "italic", colour = "blue"))+
+  #coord_flip()+
+  geom_text(aes(label = N_Artesanos), vjust = -0.3) +
+  labs(x="Numero de artesanos",y= "Estado")  +              
+  #ylim(c(0,300)) +
+  ggtitle("Numero de artesanos segun Estado")
+```
+
+**Analicemos el numero de artesanos segun tipo de constancia **
+
+```{r, render=pander::pander}
+Art_const <- df %>% 
+  group_by(TIPO_CONSTANCIA) %>% 
+  summarize(N_Artesanos = n()) %>% 
+  # ordenar el dataframe por la columna PRomedioMOnto
+  arrange(desc(N_Artesanos))
+Art_const
+```
+
+Visualicemos mediante un grafico
+
+```{r}
+Art_const %>% 
+  ggplot(mapping = aes(x = reorder(TIPO_CONSTANCIA, desc(N_Artesanos)), y = N_Artesanos)) +
+  #geom_col() +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
+  theme(axis.text.x = element_text(angle = 0, face = "italic", colour = "blue"))+
+  #coord_flip()+
+  geom_text(aes(label = N_Artesanos), vjust = -0.3) +
+  labs(x="Numero de artesanos",y= "Tipo de constancia")  +              
+  #ylim(c(0,300)) +
+  ggtitle("Numero de artesanos segun Tipo de constancia")
+```
+
+
+**Analicemos el numero de artesanos segun lineaartesanal**
+
+```{r, render=pander::pander}
+Art_linart <- df %>% 
+  group_by(LINEA_ARTESANAL) %>% 
+  summarize(N_Artesanos = n()) %>% 
+  # ordenar el dataframe por la columna PRomedioMOnto
+  arrange(desc(N_Artesanos))
+Art_linart
+```
+
+
+Visualicemos mediante un grafico
+
+```{r}
+Art_linart %>% 
+  ggplot(mapping = aes(x = reorder(LINEA_ARTESANAL, desc(N_Artesanos)), y = N_Artesanos)) +
+  #geom_col() +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
+  theme(axis.text.x = element_text(angle = 90, face = "italic", colour = "blue"))+
+  #coord_flip()+
+  geom_text(aes(label = N_Artesanos), vjust = -0.3) +
+  labs(x="Numero de artesanos",y= "Línea artesanal")  +              
+  #ylim(c(0,300)) +
+  ggtitle("Numero de artesanos segun Línea artesanal")
+```
+
+**Analicemos el numero de artesanos segun sub lineaartesanal**
+
+```{r, render=pander::pander}
+Art_sblinart <- df %>% 
+  group_by(SUBLINEA_ARTESANAL) %>% 
+  summarize(N_Artesanos = n()) %>% 
+  # ordenar el dataframe por la columna PRomedioMOnto
+  arrange(desc(N_Artesanos))
+Art_sblinart 
+```
+
+Visualicemos mediante un grafico
+
+```{r}
+Art_sblinart %>% 
+  ggplot(mapping = aes(x = reorder(SUBLINEA_ARTESANAL, desc(N_Artesanos)), y = N_Artesanos)) +
+  #geom_col() +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.6, width = 0.8)+
+  theme(axis.text.x = element_text(angle = 90, face = "italic", colour = "blue"))+
+  #coord_flip()+
+  geom_text(aes(label = N_Artesanos), vjust = -0.3) +
+  labs(x="Numero de artesanos",y= "Sublínea artesanal")  +              
+  #ylim(c(0,300)) +
+  ggtitle("Numero de artesanos segun Sublínea artesanal")
+```
 
 
 
+---
 
 
+### <span style = "color : #409421"> **Mapas** </span> 
 
+Realicemos mapas provinciales y distritales para conocer la distribucion de los artesanos piuranos
+
+
+### <span style = "color : #409421"> **Mapa provincial** </span> 
+
+Cargamos shp provincial y distrital
+
+```{r}
+## Carguemos el shp por provincias
+m_provincias <- read_sf("MProv/PROVINCIAS_inei_geogpsperu_suyopomalia.shp")
+head(m_provincias)
+
+## Carguemos el shp por distritos
+m_distritos<- read_sf("MDist/DISTRITOS_inei_geogpsperu_suyopomalia.shp")
+head(m_distritos)
+```
+
+Observamos las categorias de la llave de provincia
+
+```{r}
+unique(df$PROVINCIA)
+head(unique(m_provincias$NOMBPROV))
+```
+
+Escribimos en mayusculas df$PROVINCIA para luego unir
+
+```{r}
+df$PROVINCIA <- toupper(df$PROVINCIA)
+head(unique(df$PROVINCIA))
+```
+
+Unimos los datos por provincia
+
+```{r}
+datos <- m_provincias %>% 
+  left_join(df %>% count(PROVINCIA, name = "N_artes"),
+            by =c("NOMBPROV"= "PROVINCIA")) %>% 
+  mutate(N_artes = as.numeric(N_artes))
+```
+
+Visualizamos, en el grafico filtramos los datos a solo departamento Piura
+
+```{r}
+grafico1 <- ggplot(data = datos %>%
+                  filter(NOMBDEP=="PIURA")) +
+  geom_sf(aes(fill = N_artes), show.legend = T, colour = "white")+
+  geom_label_repel(aes(label = NOMBPROV,
+                       geometry = geometry), 
+                   size = 2,
+                   stat = "sf_coordinates",
+                   min.segment.length = 0,
+                   label.size = 1,
+                   max.overlaps = Inf) +
+  scale_fill_viridis_c(trans = "sqrt" ,  alpha = 0.9)+
+  theme_void()
+
+grafico1
+```
+
+
+### <span style = "color : #409421"> **Mapa distrital** </span> 
+
+Observamos las categorias de la llave de distrito
+
+```{r}
+head(unique(df$DISTRITO))
+head(unique(m_distritos$NOMBDIST))
+```
+
+Escribimos en mayusculas df$DISTRITO para luego unir
+
+```{r}
+df$DISTRITO <- toupper(df$DISTRITO)
+head(unique(df$DISTRITO))
+```
+
+Unimos los datos por distrito y filtramos la data a los datos departamento Piura
+
+```{r}
+datos_dist <- m_distritos %>% 
+  left_join(df %>% count(DISTRITO, name = "N_artes"),
+            by =c("NOMBDIST"= "DISTRITO")) %>% 
+  mutate(N_artes = as.numeric(N_artes)) %>%
+  filter(NOMBDEP=="PIURA")
+```
+
+Visualizamos mapa por distrito
+
+```{r}
+grafico2 <- ggplot(data = datos_dist)  +
+  geom_sf(aes(fill = N_artes), show.legend = T, colour = "white")+
+  geom_label_repel(aes(label = NOMBDIST,
+                       geometry = geometry), 
+                   size = 2,
+                   stat = "sf_coordinates",
+                   min.segment.length = 0,
+                   label.size = 1,
+                   max.overlaps = Inf) +
+  scale_fill_viridis_c(trans = "sqrt" ,  alpha = 0.9)+
+  theme_void()
+
+grafico2
+
+```
 
 
